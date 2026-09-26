@@ -28,6 +28,20 @@ class Kanji(
     val shortMeaning get() = meaning.substringBefore(';').trim()
 }
 
+/**
+ * Readings as dictionaries print them. The data marks where okurigana (the kana written
+ * after the kanji) begin with a dot, KANJIDIC-style: おお.きい is shown as おお(きい).
+ */
+object Readings {
+    fun display(reading: String): String {
+        val dot = reading.indexOf('.')
+        if (dot < 0) return reading
+        return reading.substring(0, dot) + "(" + reading.substring(dot + 1).replace(".", "") + ")"
+    }
+
+    fun list(readings: List<String>): String = readings.joinToString("・") { display(it) }
+}
+
 class Group(val id: String, val title: String, val jp: String, val kanji: List<Kanji>)
 
 class Catalog(val groups: List<Group>) {

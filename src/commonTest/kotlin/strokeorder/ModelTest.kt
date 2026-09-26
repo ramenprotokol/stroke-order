@@ -4,6 +4,7 @@ import strokeorder.model.Catalog
 import strokeorder.model.Group
 import strokeorder.model.Kana
 import strokeorder.model.Kanji
+import strokeorder.model.Readings
 import strokeorder.model.Search
 import strokeorder.model.ShareLink
 import kotlin.test.Test
@@ -26,6 +27,36 @@ class KanaTest {
     }
 
     @Test
+    fun romajiInAnySpellingBecomesKana() {
+        // Hepburn and Kunrei (and Nihon-shiki) spellings of the same kana.
+        for ((romaji, kana) in listOf(
+            "tsu" to "つ", "tu" to "つ", "chi" to "ち", "ti" to "ち", "shi" to "し", "si" to "し",
+            "ji" to "じ", "zi" to "じ", "fu" to "ふ", "hu" to "ふ", "sha" to "しゃ", "sya" to "しゃ",
+            "cho" to "ちょ", "tyo" to "ちょ", "ju" to "じゅ", "zyu" to "じゅ", "du" to "づ",
+            "mittsu" to "みっつ", "mittu" to "みっつ", "matcha" to "まっちゃ", "kanna" to "かんな",
+            "hon" to "ほん", "hon'ya" to "ほんや", "jū" to "じゅう", "shô" to "しょう",
+        )) assertEquals(kana, Kana.fromRomaji(romaji), romaji)
+        assertEquals(null, Kana.fromRomaji("water"))
+        assertEquals(null, Kana.fromRomaji("fire"))
+    }
+
+    @Test
+    fun longVowelsFold() {
+        for (r in listOf("juu", "ju")) assertEquals("ju", Kana.foldLongVowels(r))
+        for (r in listOf("shou", "shoo", "sho")) assertEquals("sho", Kana.foldLongVowels(r))
+        assertEquals("sei", Kana.foldLongVowels("sei"))
+        assertEquals("chii", Kana.foldLongVowels("chii"))
+    }
+
+    @Test
+    fun okuriganaIsShownInBrackets() {
+        assertEquals("おお(きい)", Readings.display("おお.きい"))
+        assertEquals("ひと", Readings.display("ひと"))
+        assertEquals("ダイ・タイ", Readings.list(listOf("ダイ", "タイ")))
+        assertEquals("おお・おお(きい)・おお(いに)", Readings.list(listOf("おお", "おお.きい", "おお.いに")))
+    }
+
+    @Test
     fun katakanaFoldsToHiragana() {
         assertEquals("かわ", Kana.toHiragana("カワ"))
         assertEquals("abc", Kana.toHiragana("abc"))
@@ -44,6 +75,10 @@ class SearchTest {
                     k("水", "water", listOf("スイ"), listOf("みず")),
                     k("一", "one", listOf("イチ"), listOf("ひと", "ひと.つ")),
                     k("人", "person", listOf("ジン", "ニン"), listOf("ひと")),
+                    k("十", "ten", listOf("ジュウ", "ジッ"), listOf("とお", "と")),
+                    k("小", "small", listOf("ショウ"), listOf("ちい.さい", "こ", "お")),
+                    k("月", "moon; month", listOf("ゲツ", "ガツ"), listOf("つき")),
+                    k("千", "thousand", listOf("セン"), listOf("ち")),
                 ),
             ),
         ),
@@ -67,6 +102,32 @@ class SearchTest {
         assertEquals(listOf("水"), chars("スイ"))
         assertEquals(listOf("一"), chars("hitotsu"))
         assertEquals(listOf("一", "人"), chars("hito"))
+    }
+
+    @Test
+    fun fullWidthAndHalfWidthInputIsFolded() {
+        assertEquals(listOf("水"), chars("ｍｉｚｕ")) // full-width Latin
+        assertEquals(listOf("水"), chars("ＷＡＴＥＲ"))
+        assertEquals(listOf("水"), chars("ｽｲ")) // half-width katakana
+        assertEquals(listOf("十"), chars("ｼﾞｭｳ")) // half-width with a separate voicing mark
+        assertEquals(listOf("水"), chars("　みず　")) // ideographic spaces
+    }
+
+    @Test
+    fun kunreiRomajiFindsReadings() {
+        for ((kunrei, hepburn) in listOf("tuki" to "tsuki", "ti" to "chi", "syou" to "shou", "zyuu" to "juu", "hu" to "fu")) {
+            assertEquals(chars(hepburn), chars(kunrei), kunrei)
+        }
+        assertEquals(listOf("月"), chars("tuki"))
+        assertEquals(listOf("千", "小"), chars("ti")) // ち exactly, then ちい(さい) by prefix
+        assertEquals(listOf("小"), chars("syou"))
+        assertEquals(listOf("十"), chars("zyuu"))
+    }
+
+    @Test
+    fun longVowelsMayBeMarkedDoubledOrLeftOut() {
+        for (q in listOf("jū", "juu", "ju", "jû", "ジュー")) assertEquals(listOf("十"), chars(q), q)
+        for (q in listOf("shō", "shou", "sho", "shô")) assertEquals(listOf("小"), chars(q), q)
     }
 
     @Test

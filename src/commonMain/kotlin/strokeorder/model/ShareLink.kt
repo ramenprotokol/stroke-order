@@ -48,7 +48,8 @@ object ShareLink {
         for (b in s.encodeToByteArray()) {
             val v = b.toInt() and 0xFF
             val c = v.toChar()
-            if (c.isLetterOrDigit() && v < 0x80) append(c) else append('%').append(HEX[v shr 4]).append(HEX[v and 0xF])
+            // An explicit ASCII allow-list: Char.isLetterOrDigit() would pull Unicode tables into the bundle.
+            if (c in 'A'..'Z' || c in 'a'..'z' || c in '0'..'9') append(c) else append('%').append(HEX[v shr 4]).append(HEX[v and 0xF])
         }
     }
 

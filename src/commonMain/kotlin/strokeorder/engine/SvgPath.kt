@@ -110,6 +110,9 @@ object SvgPath {
         data class Num(val value: Double) : Token()
     }
 
+    // ASCII only (SVG path data is ASCII); Char.isDigit() would pull Unicode tables into the bundle.
+    private fun isDigit(c: Char) = c in '0'..'9'
+
     /** Splits "M11,54.25c3.19,0.62-5.12.5" into commands and numbers (handles "-" and "." as separators). */
     private fun tokenize(d: String): List<Token> {
         val out = ArrayList<Token>()
@@ -117,23 +120,23 @@ object SvgPath {
         while (i < d.length) {
             val ch = d[i]
             when {
-                ch.isWhitespace() || ch == ',' -> i++
+                ch == ' ' || ch == ',' || ch == '\n' || ch == '\t' || ch == '\r' || ch == '\u000C' -> i++
                 ch in "MmLlHhVvCcSsQqTtZz" -> { out.add(Token.Cmd(ch)); i++ }
-                ch == '-' || ch == '+' || ch == '.' || ch.isDigit() -> {
+                ch == '-' || ch == '+' || ch == '.' || isDigit(ch) -> {
                     val startIdx = i
                     if (ch == '-' || ch == '+') i++
                     var sawDot = false
                     var sawDigit = false
                     while (i < d.length) {
                         val c = d[i]
-                        if (c.isDigit()) { sawDigit = true; i++ }
+                        if (isDigit(c)) { sawDigit = true; i++ }
                         else if (c == '.' && !sawDot) { sawDot = true; i++ }
                         else break
                     }
                     if (i < d.length && (d[i] == 'e' || d[i] == 'E')) {
                         i++
                         if (i < d.length && (d[i] == '-' || d[i] == '+')) i++
-                        while (i < d.length && d[i].isDigit()) i++
+                        while (i < d.length && isDigit(d[i])) i++
                     }
                     require(sawDigit) { "malformed number at $startIdx" }
                     val v = d.substring(startIdx, i).toDouble()
