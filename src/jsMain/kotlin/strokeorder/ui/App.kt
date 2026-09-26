@@ -291,7 +291,10 @@ class App(private val catalog: Catalog) {
     }
 
     private fun scrollSheetIntoViewOnPhone() {
-        if (window.innerWidth < 900) el("sheet").asDynamic().scrollIntoView(js("({ block: 'center', behavior: 'smooth' })"))
+        if (window.innerWidth >= 900) return
+        val options: dynamic = js("({ block: 'center' })")
+        options.behavior = if (prefersReducedMotion()) "auto" else "smooth"
+        el("sheet").asDynamic().scrollIntoView(options)
     }
 
     private fun buildPicker() {

@@ -96,9 +96,10 @@ mistake has its own feedback sentence. Kotlin/JS also drives the canvas and the 
 whole app is one language.
 
 **Bundle size (measured on the production build, webpack production mode with Kotlin/JS
-dead-code elimination):** `app.js` is 175,199 bytes, 53,240 bytes gzipped (level 9) and
-44,605 bytes with Brotli (quality 11). That is the Kotlin standard library's share plus
-the app. `npm run build` prints these numbers for every file in `dist/`.
+dead-code elimination):** `app.js` is 175,247 bytes, 53,269 bytes gzipped (level 9) and
+44,611 bytes with Brotli (quality 11); the compressed sizes move by a few dozen bytes
+from build to build (see the limitations). That is the Kotlin standard library's share
+plus the app. `npm run build` prints these numbers for every file in `dist/`.
 
 ## Build and test
 
