@@ -56,7 +56,7 @@ class PracticeTest {
         san.submit(Fixtures.strokes(Fixtures.SAN)[0])
         val skip = san.submit(Fixtures.strokes(Fixtures.SAN)[2])
         assertEquals(Verdict.OutOfOrder(2, 1), skip)
-        assertEquals("That's stroke 3 — stroke 2 comes first (the middle horizontal).", Feedback.forVerdict(Fixtures.SAN, skip))
+        assertEquals("That's stroke 3 — stroke 2 comes first (the horizontal across the middle).", Feedback.forVerdict(Fixtures.SAN, skip))
     }
 
     @Test
@@ -112,11 +112,26 @@ class PracticeTest {
     @Test
     fun strokesDescribeThemselves() {
         val names = Fixtures.SAN.strokes.indices.map { strokeorder.engine.Describe.stroke(Fixtures.SAN, it) }
-        assertEquals(listOf("the upper horizontal", "the middle horizontal", "the lowest horizontal"), names)
+        assertEquals(listOf("the top horizontal", "the horizontal across the middle", "the bottom horizontal"), names)
         assertEquals("the dot", strokeorder.engine.Describe.stroke(Fixtures.HI, 0))
         assertEquals("the short left sweep", strokeorder.engine.Describe.stroke(Fixtures.HI, 1))
         assertEquals("the long left sweep", strokeorder.engine.Describe.stroke(Fixtures.HI, 2))
         assertEquals("starts at the top left", strokeorder.engine.Describe.travel(Fixtures.KUCHI, 1))
         assertEquals("Begin with stroke 1 — the left sweep.", Feedback.prompt(Fixtures.MIGI, 0))
+    }
+
+    @Test
+    fun aLookAlikeWrittenFirstIsJudgedByWhereItIs() {
+        val san = Fixtures.strokes(Fixtures.SAN)
+        // 三's middle line written first, 10 units above its place, is still the middle line.
+        assertEquals(Verdict.OutOfOrder(drawn = 1, expected = 0), Practice(Fixtures.SAN).submit(Perturb.shift(san[1], 0.0, -10.0)))
+        // Its first line written 10 units low is still the first line: without clear evidence,
+        // the first stroke keeps the benefit of the doubt.
+        assertIs<Verdict.Accepted>(Practice(Fixtures.SAN).submit(Perturb.shift(san[0], 0.0, 10.0)))
+        // Once strokes are written, the nearer look-alike wins: the bottom line written
+        // where the middle one goes is the middle one.
+        val p = Practice(Fixtures.SAN)
+        p.submit(san[0])
+        assertEquals(Verdict.Accepted(1, complete = false), p.submit(Perturb.shift(san[2], 0.0, -30.0)))
     }
 }

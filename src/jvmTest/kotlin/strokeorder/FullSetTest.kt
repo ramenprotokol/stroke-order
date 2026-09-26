@@ -3,8 +3,6 @@ package strokeorder
 import strokeorder.engine.Practice
 import strokeorder.engine.Verdict
 import strokeorder.model.Kanji
-import strokeorder.model.RefStroke
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -15,18 +13,7 @@ import kotlin.test.assertTrue
  */
 class FullSetTest {
     private val SEEDS = (System.getenv("SWEEP_SEEDS") ?: "4").toInt()
-    private val pathRe = Regex("""<path [^>]*?kvg:type="([^"]*)"[^>]*? d="([^"]+)"""")
-
-    private val set: List<Kanji> by lazy {
-        val dir = File("data/kanjivg")
-        val files = dir.listFiles { f -> f.name.matches(Regex("[0-9a-f]{5}\\.svg")) }!!.sortedBy { it.name }
-        files.map { f ->
-            val svg = f.readText()
-            val strokes = pathRe.findAll(svg).map { RefStroke(it.groupValues[2], it.groupValues[1], null) }.toList()
-            val ch = String(Character.toChars(f.name.substring(0, 5).toInt(16)))
-            Kanji(ch, "", "", emptyList(), emptyList(), strokes)
-        }
-    }
+    private val set: List<Kanji> get() = KanjiSet.all
 
     @Test
     fun snapshotHasTheCuratedEighty() {
@@ -118,5 +105,34 @@ class FullSetTest {
         misses.take(15).forEach { println("  $it") }
         assertTrue(skipHits >= skipChecks * 0.97, "skip-ahead rate")
         assertTrue(revHits >= revChecks * 0.97, "reversed rate")
+    }
+
+    /**
+     * Dots and other short marks, dabbed the way a finger often does: much shorter than
+     * KanjiVG's drawn dot (3, 5 and 8 units), centred where it belongs and pointing its
+     * way, after the strokes before it were written. Every one should count.
+     */
+    @Test
+    fun shortDabsOnDotsAndMarksAreAccepted() {
+        var checks = 0
+        val misses = mutableListOf<String>()
+        for (k in set) for (i in 0 until k.strokeCount) {
+            val s = k.strokes[i]
+            if (!s.type.startsWith("㇔") && s.length >= strokeorder.engine.MatchConfig().markLength) continue
+            val even = strokeorder.engine.Geometry.resample(s.points, 32)
+            val c = strokeorder.engine.Geometry.centroid(even)
+            val d = even.last() - even.first()
+            val u = d * (1.0 / d.length())
+            for (len in listOf(3.0, 5.0, 8.0)) {
+                val p = Practice(k)
+                for (j in 0 until i) p.submit(k.strokes[j].points)
+                val dab = line(c.x - u.x * len / 2, c.y - u.y * len / 2, c.x + u.x * len / 2, c.y + u.y * len / 2)
+                checks++
+                val v = p.submit(dab)
+                if (v !is Verdict.Accepted) misses += "${k.char} stroke ${i + 1} (${s.type}, ${len.toInt()} units): $v"
+            }
+        }
+        println("short dabs on dots and marks: ${checks - misses.size}/$checks accepted")
+        assertEquals(emptyList(), misses)
     }
 }

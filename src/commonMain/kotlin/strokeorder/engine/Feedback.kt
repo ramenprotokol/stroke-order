@@ -24,37 +24,15 @@ object Describe {
 
     fun isOneMovement(type: String): Boolean = type.firstOrNull()?.let { it in oneMovement } ?: false
 
-    /** "the horizontal", "the short horizontal", "the upper left sweep"… */
-    fun stroke(kanji: Kanji, index: Int): String {
-        val name = typeName(kanji.strokes[index].type)
-        val group = kanji.strokes.indices.filter { typeName(kanji.strokes[it].type) == name }
-        if (group.size < 2) return "the $name"
-        val centres = group.associateWith { Geometry.centroid(kanji.strokes[it].points) }
-        val xs = centres.values.map { it.x }
-        val ys = centres.values.map { it.y }
-        val vertical = (ys.max() - ys.min()) >= (xs.max() - xs.min())
-        if (group.size == 2) {
-            val lengths = group.map { kanji.strokes[it].length }
-            if (lengths.min() / lengths.max() <= 0.62) {
-                val isShort = kanji.strokes[index].length == lengths.min()
-                return "the ${if (isShort) "short" else "long"} $name"
-            }
-            val other = group.first { it != index }
-            val me = centres.getValue(index)
-            val them = centres.getValue(other)
-            val word = if (vertical) (if (me.y < them.y) "upper" else "lower") else (if (me.x < them.x) "left" else "right")
-            return "the $word $name"
-        }
-        val sorted = group.sortedBy { if (vertical) centres.getValue(it).y else centres.getValue(it).x }
-        val rank = sorted.indexOf(index)
-        val (first, middle, last) = if (vertical) Triple("upper", "middle", "lowest") else Triple("left", "middle", "right")
-        return when {
-            rank == 0 -> "the $first $name"
-            rank == sorted.lastIndex -> "the $last $name"
-            group.size == 3 -> "the $middle $name"
-            else -> "the ${ordinal(rank + 1)} $name from the ${if (vertical) "top" else "left"}"
-        }
-    }
+    /**
+     * A name for stroke [index] that says where it sits in the character, e.g. "the
+     * vertical down the middle", "the horizontal across the middle", "the upper-left dot",
+     * "the roof" or "the second left sweep". Every stroke of a character gets a different
+     * description. Positions are judged against every stroke's straight stretches, the
+     * horizontal and vertical parts of turns included, and against the whole character's
+     * extent, not only against strokes of the same type.
+     */
+    fun stroke(kanji: Kanji, index: Int): String = Placement.describe(kanji)[index]
 
     /** How a stroke travels: "runs left to right" or, for turns, "starts at the top left". */
     fun travel(kanji: Kanji, index: Int): String {
@@ -73,7 +51,6 @@ object Describe {
         return "starts at the $where"
     }
 
-    private fun ordinal(n: Int) = when (n) { 2 -> "2nd"; 3 -> "3rd"; else -> "${n}th" }
 }
 
 /** Gentle, specific sentences for each verdict. */

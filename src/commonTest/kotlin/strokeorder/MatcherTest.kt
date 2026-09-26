@@ -1,6 +1,9 @@
 package strokeorder
 
+import strokeorder.engine.Comparison
 import strokeorder.engine.Compass
+import strokeorder.engine.Fit
+import strokeorder.engine.Geometry
 import strokeorder.engine.Point
 import strokeorder.engine.StrokeMatcher
 import strokeorder.util.Rng
@@ -8,6 +11,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class DirectionTest {
@@ -102,5 +106,54 @@ class MatcherTest {
         assertFalse(m.compare(m.resample(diagonal), m.prepare(turn)).passes, "diagonal for a turn")
         // …and neither is only its first half (lifting the brush at the corner).
         assertFalse(m.compare(m.resample(turn.take(turn.size / 2)), m.prepare(turn)).passes, "half a turn")
+    }
+
+    @Test
+    fun aReadingThatPassesBeatsALowerScoringOneThatFails() {
+        // Forward passes every measure; backward is closer overall but fails on heading.
+        val forward = Fit(loc = 1.0, shape = 0.3, heading = 0.6, locTol = 10.0, shapeTol = 0.34, headingTol = 0.62)
+        val backward = Fit(loc = 0.1, shape = 0.01, heading = 0.7, locTol = 10.0, shapeTol = 0.34, headingTol = 0.62)
+        assertTrue(forward.passes && !backward.passes && backward.score < forward.score)
+        for (directionMatters in listOf(true, false)) {
+            val c = Comparison(forward, backward, directionMatters)
+            assertSame(forward, c.best, "directionMatters=$directionMatters")
+            assertTrue(c.passes)
+            assertFalse(c.looksReversed || c.wrongDirection)
+        }
+        // Swapped round, the stroke is drawn backwards.
+        val reversed = Comparison(backward, forward, directionMatters = true)
+        assertTrue(reversed.looksReversed && reversed.wrongDirection && reversed.passes)
+    }
+
+    @Test
+    fun aShortDabOnADotCountsButALineThroughItDoesNot() {
+        // 火's first stroke is a dot about 20 units long; a finger often dabs far shorter.
+        val dot = Fixtures.HI.strokes[0].points
+        val ref = m.prepare(dot, directional = false, dot = true)
+        assertTrue(ref.mark)
+        val c = Geometry.centroid(Geometry.resample(dot, 32))
+        val d = dot.last() - dot.first()
+        val u = d * (1.0 / d.length())
+        for (length in listOf(2.5, 4.0, 6.0, 10.0, 16.0, 24.0)) {
+            val dab = line(c.x - u.x * length / 2, c.y - u.y * length / 2, c.x + u.x * length / 2, c.y + u.y * length / 2)
+            assertTrue(m.compare(m.resample(dab), ref).passes, "a $length-unit dab")
+            // …drawn either way round, since a dot's direction isn't judged
+            assertTrue(m.compare(m.resample(dab.reversed()), ref).passes, "a $length-unit dab, reversed")
+        }
+        // A long line through the same spot is a line, not a dot.
+        val long = line(c.x - u.x * 30, c.y - u.y * 30, c.x + u.x * 30, c.y + u.y * 30)
+        assertFalse(m.compare(m.resample(long), ref).passes, "a 60-unit line")
+        // A dab well away from the dot is somewhere else.
+        assertFalse(m.compare(m.resample(line(c.x + 20, c.y + 20, c.x + 24, c.y + 24)), ref).passes, "a dab 28 units away")
+    }
+
+    @Test
+    fun aShortMarkWhoseDirectionCountsIsStillCaughtBackwards() {
+        // A short tick (13–18 units, not a dot) is a mark but keeps its direction.
+        val tick = line(54.0, 10.0, 54.0, 24.0)
+        val ref = m.prepare(tick)
+        assertTrue(ref.mark && ref.directionMatters)
+        assertTrue(m.compare(m.resample(line(54.0, 13.0, 54.0, 17.0)), ref).let { it.passes && !it.wrongDirection })
+        assertTrue(m.compare(m.resample(line(54.0, 17.0, 54.0, 13.0)), ref).wrongDirection)
     }
 }

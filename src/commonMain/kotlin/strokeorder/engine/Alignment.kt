@@ -5,14 +5,15 @@ import kotlin.math.sqrt
 /**
  * A uniform scale plus translation that maps the writer's coordinates onto the
  * reference frame. People rarely write exactly on top of the model: this lets later
- * strokes be judged relative to the ones already written.
+ * strokes be judged relative to the ones already written. [scaleKnown] is false until
+ * the written strokes spread out enough to measure the writer's scale.
  */
-data class Similarity(val scale: Double, val tx: Double, val ty: Double) {
+data class Similarity(val scale: Double, val tx: Double, val ty: Double, val scaleKnown: Boolean = true) {
     fun apply(p: Point) = Point(scale * p.x + tx, scale * p.y + ty)
     fun apply(pts: List<Point>) = pts.map { apply(it) }
 
     companion object {
-        val IDENTITY = Similarity(1.0, 0.0, 0.0)
+        val IDENTITY = Similarity(1.0, 0.0, 0.0, scaleKnown = false)
 
         const val MIN_SCALE = 0.7
         const val MAX_SCALE = 1.45
@@ -39,8 +40,9 @@ data class Similarity(val scale: Double, val tx: Double, val ty: Double) {
             }
             varU /= user.size
             cov /= user.size
-            val s = if (sqrt(varU) >= MIN_SPREAD) (cov / varU).coerceIn(MIN_SCALE, MAX_SCALE) else 1.0
-            return Similarity(s, mr.x - s * mu.x, mr.y - s * mu.y)
+            val known = sqrt(varU) >= MIN_SPREAD
+            val s = if (known) (cov / varU).coerceIn(MIN_SCALE, MAX_SCALE) else 1.0
+            return Similarity(s, mr.x - s * mu.x, mr.y - s * mu.y, known)
         }
     }
 }
