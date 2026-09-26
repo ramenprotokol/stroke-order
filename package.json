@@ -1,0 +1,20 @@
+{
+  "name": "stroke-order",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Write a kanji with your finger or mouse; ink appears as a brush and the app checks your stroke order. Kotlin/JS.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "npm run test:kotlin && npm run test:data && npm run build && npm run test:e2e",
+    "test:kotlin": "./gradlew allTests --console=plain --rerun-tasks",
+    "test:data": "node --test e2e/data.test.mjs e2e/contrast.test.mjs",
+    "test:e2e": "node --test e2e/smoke.test.mjs e2e/notices.test.mjs e2e/browser.test.mjs",
+    "serve": "node scripts/serve.mjs",
+    "data:verify": "node scripts/fetch-kanjivg.mjs --verify"
+  }
+}
