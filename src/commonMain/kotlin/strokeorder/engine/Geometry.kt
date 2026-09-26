@@ -16,14 +16,10 @@ data class Point(val x: Double, val y: Double) {
     fun length(): Double = hypot(x, y)
 }
 
-/** Side of the KanjiVG viewBox. Every stroke comparison happens in this frame. */
-const val FRAME = 109.0
-
 data class Box(val minX: Double, val minY: Double, val maxX: Double, val maxY: Double) {
     val width get() = maxX - minX
     val height get() = maxY - minY
     val diagonal get() = hypot(width, height)
-    val center get() = Point((minX + maxX) / 2, (minY + maxY) / 2)
 }
 
 object Geometry {

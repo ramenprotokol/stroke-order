@@ -105,7 +105,8 @@ the app. `npm run build` prints these numbers for every file in `dist/`.
 Needs **Java 21** and **Node 22+**. On the first run, the Gradle wrapper downloads
 Gradle 9.7.1, the Kotlin 2.4.20 plugin and a Node.js runtime for the Kotlin/JS
 toolchain, plus webpack through npm (pinned in `kotlin-js-store/package-lock.json`).
-After that the build works offline.
+After that, everything comes from Gradle's and npm's local caches. The stroke data
+never needs the network: the KanjiVG snapshot is committed.
 
 ```sh
 npm run build      # verify data checksums, build stroke data, Kotlin/JS production bundle, assemble dist/
@@ -190,6 +191,11 @@ separate guarded script so the right account is always used.
   absorption.
 - Writing needs a pointer (mouse, pen or touch). Keyboard users can pick characters,
   play Show me and use every control, but cannot write.
+- On touch screens the sheet keeps every touch for the brush, so scroll the page by
+  touching outside the sheet.
+- Builds are functionally identical but not byte-for-byte reproducible: the Kotlin/JS
+  compiler can list a class's interfaces in a different order from run to run, which
+  changes the bundle's content hash.
 
 ## Next
 
