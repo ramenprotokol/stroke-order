@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>stroke-order — write kanji with a brush</title>
+  <meta name="description" content="Write a kanji with your finger or mouse. Ink appears as a brush and the page checks your stroke order and direction against KanjiVG.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#e4dccb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1220" media="(prefers-color-scheme: dark)">
+  <meta name="stroke-data" content="{{DATA}}">
+  <link rel="icon" href="{{FAVICON}}" type="image/svg+xml">
+  <link rel="preload" href="{{FONT_SERIF}}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{DATA}}" as="fetch" type="application/json" crossorigin>
+  <link rel="stylesheet" href="{{CSS}}">
+  <script>
+    // Apply the saved paper choice before first paint (no flash). Storage may be unavailable.
+    try { var p = localStorage.getItem('stroke-order:paper'); if (p === 'washi' || p === 'indigo') document.documentElement.dataset.theme = p; } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="app">
+    <header class="masthead fade-while-inking">
+      <h1 class="wordmark"><span class="wordmark-jp" lang="ja">書き順</span><span class="wordmark-en">stroke-order</span></h1>
+      <p class="tagline">Write with a finger, pen or mouse. The brush checks your stroke order and direction.</p>
+    </header>
+
+    <section class="specimen" aria-label="Character">
+      <p class="glyph" lang="ja" id="glyph">一</p>
+      <div class="facts">
+        <p class="meaning" id="meaning">one</p>
+        <dl class="readings">
+          <div><dt>on</dt><dd lang="ja" id="reading-on">—</dd></div>
+          <div><dt>kun</dt><dd lang="ja" id="reading-kun">—</dd></div>
+        </dl>
+        <p class="count" id="count">1 stroke</p>
+      </div>
+      <button type="button" class="next fade-while-inking" id="btn-next">Next <span lang="ja" id="next-char">二</span></button>
+    </section>
+
+    <section class="guidance" aria-label="Feedback">
+      <ol class="progress" id="progress" aria-label="Strokes written"></ol>
+      <p class="feedback" id="feedback" role="status" aria-live="polite">Loading stroke data…</p>
+    </section>
+
+    <main class="stage">
+      <div class="sheet" id="sheet" role="img" aria-label="Writing sheet">
+        <canvas class="layer paper" id="layer-paper" aria-hidden="true"></canvas>
+        <canvas class="layer" id="layer-guide" aria-hidden="true"></canvas>
+        <canvas class="layer" id="layer-ink" aria-hidden="true"></canvas>
+        <canvas class="layer" id="layer-demo" aria-hidden="true"></canvas>
+        <canvas class="layer wet" id="layer-wet" aria-hidden="true"></canvas>
+        <canvas class="seal" id="seal" aria-hidden="true"></canvas>
+        <p class="sheet-caption" aria-hidden="true"><span lang="ja" id="caption-char"></span><span id="caption-text"></span></p>
+      </div>
+      <p class="pen-note fade-while-inking" id="pen-note">Writing needs a mouse, pen or finger. From the keyboard, <em>Show me</em> plays the stroke order.</p>
+    </main>
+
+    <section class="controls fade-while-inking" id="controls" aria-label="Controls">
+        <div class="row">
+          <button type="button" class="primary" id="btn-show">Show me</button>
+          <button type="button" id="btn-undo">Undo</button>
+          <button type="button" id="btn-clear">Clear</button>
+        </div>
+        <div class="row toggles" role="group" aria-label="Sheet options">
+          <button type="button" class="toggle" id="tgl-grid" aria-pressed="true">Grid</button>
+          <button type="button" class="toggle" id="tgl-model" aria-pressed="true">Model</button>
+          <button type="button" class="toggle" id="tgl-paper" aria-pressed="false">Indigo paper</button>
+        </div>
+        <div class="row">
+          <button type="button" id="btn-save">Save as PNG</button>
+          <button type="button" id="btn-link">Copy link</button>
+          <span class="share-note" id="share-note" role="status" aria-live="polite"></span>
+        </div>
+    </section>
+
+    <section class="picker fade-while-inking" aria-labelledby="picker-title">
+      <h2 id="picker-title">Characters <span class="picker-sub">the 80 first-grade kanji</span></h2>
+      <label class="search-label" for="search">Search by meaning or reading</label>
+      <input class="search" id="search" type="search" maxlength="40" autocomplete="off" spellcheck="false" placeholder="fire · hi · ひ · mizu">
+      <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+      <div id="groups"></div>
+    </section>
+
+    <footer class="colophon fade-while-inking">
+      <p>Stroke order, shapes and directions come from <a href="https://kanjivg.tagaini.net/">KanjiVG</a> © Ulrich Apel, used under <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>. The <a href="{{DATA}}">stroke data file</a> this page loads is adapted from it (80 characters' paths extracted, readings and meanings added) and is shared under the same licence.</p>
+      <p>App code MIT. Fonts: Noto Serif JP and Noto Sans (SIL OFL 1.1). <a href="THIRD-PARTY-NOTICES.txt">Third-party notices</a>. Made by Ramen Protocol, built with AI assistance (Claude).</p>
+    </footer>
+  </div>
+  <noscript><p class="noscript">stroke-order needs JavaScript to draw and check strokes.</p></noscript>
+  <script src="{{JS}}" defer></script>
+</body>
+</html>

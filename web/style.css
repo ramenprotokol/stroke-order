@@ -1,0 +1,378 @@
+/* stroke-order — shodō: sumi ink on washi, or light ink on indigo paper. */
+
+@font-face {
+  font-family: "SO Serif JP";
+  src: url("{{FONT_SERIF}}") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "SO Sans";
+  src: url("{{FONT_SANS}}") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Washi (light). Every text colour here is checked for WCAG AA by e2e/contrast.test.mjs. */
+:root {
+  --desk: #e4dccb;
+  --paper: #f6f1e6;
+  --text: #1d1a16;
+  --muted: #5b5247;
+  --line: rgba(29, 26, 22, 0.18);
+  --line-strong: rgba(29, 26, 22, 0.42);
+  --shu: #a3301c;
+  --primary-bg: #a3301c;
+  --primary-fg: #fbf5ea;
+  --focus: #a3301c;
+  --caption: #a3301c;
+  --shadow: rgba(70, 50, 25, 0.3);
+  --shadow-near: rgba(70, 50, 25, 0.22);
+  --seal-blend: multiply;
+  --serif: "SO Serif JP", "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --sans: "SO Sans", "Noto Sans", "Hiragino Sans", system-ui, sans-serif;
+  color-scheme: light;
+}
+
+/* Indigo (dark): system preference, unless the washi paper was chosen explicitly. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="washi"]) {
+    --desk: #0d1220;
+    --paper: #19223b;
+    --text: #ebe5d6;
+    --muted: #aaa89c;
+    --line: rgba(235, 229, 214, 0.16);
+    --line-strong: rgba(235, 229, 214, 0.42);
+    --shu: #ff9477;
+    --primary-bg: #ff9477;
+    --primary-fg: #1b1210;
+    --focus: #ff9477;
+    --caption: #ff9a7e;
+    --shadow: rgba(0, 0, 0, 0.55);
+    --shadow-near: rgba(0, 0, 0, 0.4);
+    --seal-blend: normal;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="indigo"] {
+  --desk: #0d1220;
+  --paper: #19223b;
+  --text: #ebe5d6;
+  --muted: #aaa89c;
+  --line: rgba(235, 229, 214, 0.16);
+  --line-strong: rgba(235, 229, 214, 0.42);
+  --shu: #ff9477;
+  --primary-bg: #ff9477;
+  --primary-fg: #1b1210;
+  --focus: #ff9477;
+  --caption: #ff9a7e;
+  --shadow: rgba(0, 0, 0, 0.55);
+  --shadow-near: rgba(0, 0, 0, 0.4);
+  --seal-blend: normal;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--desk);
+  color: var(--text);
+  font: 400 1rem/1.55 var(--sans);
+  overflow-x: hidden;
+}
+
+a { color: var(--shu); text-underline-offset: 0.18em; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+[lang="ja"] { font-family: var(--serif); font-weight: 500; }
+
+/* ---------- layout ---------- */
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "masthead" "specimen" "guidance" "stage" "controls" "picker" "colophon";
+  gap: 14px;
+}
+.masthead { grid-area: masthead; }
+.specimen { grid-area: specimen; }
+.guidance { grid-area: guidance; }
+.stage { grid-area: stage; min-width: 0; }
+.controls { grid-area: controls; }
+.picker { grid-area: picker; }
+.colophon { grid-area: colophon; }
+
+@media (min-width: 900px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr) 356px;
+    grid-template-areas:
+      "stage masthead"
+      "stage specimen"
+      "stage guidance"
+      "stage controls"
+      "stage picker"
+      "stage colophon";
+    grid-template-rows: auto auto auto auto 1fr auto;
+    column-gap: 56px;
+    row-gap: 18px;
+    padding-top: 28px;
+    align-items: start;
+  }
+  .stage { position: sticky; top: 24px; display: flex; flex-direction: column; align-items: center; }
+}
+
+/* ---------- masthead ---------- */
+
+.wordmark {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-weight: 500;
+  font-size: 1rem;
+}
+.wordmark-jp { font-size: 1.7rem; letter-spacing: 0.08em; }
+.wordmark-en {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tagline { margin: 2px 0 0; color: var(--muted); font-size: 0.88rem; max-width: 46ch; }
+
+/* ---------- specimen ---------- */
+
+.specimen {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.glyph {
+  margin: 0;
+  font-size: 3.9rem;
+  line-height: 1;
+  min-width: 1.1em;
+  text-align: center;
+}
+.facts { min-width: 0; flex: 1; }
+.next { align-self: center; white-space: nowrap; }
+.next [lang="ja"] { font-size: 1.15rem; margin-left: 4px; }
+.meaning { margin: 0 0 4px; font-size: 1.2rem; font-weight: 600; }
+.readings { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; }
+.readings div { display: flex; gap: 6px; align-items: baseline; min-width: 0; }
+.readings dt { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.readings dd { margin: 0; font-size: 1.02rem; overflow-wrap: anywhere; }
+.count { margin: 4px 0 0; color: var(--muted); font-size: 0.88rem; }
+
+@media (min-width: 900px) {
+  .glyph { font-size: 6rem; }
+  .tagline { max-width: 34ch; font-size: 0.92rem; }
+}
+
+/* ---------- progress + feedback ---------- */
+
+.progress {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.progress li {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--line-strong);
+}
+.progress li.done { background: var(--text); color: var(--desk); border-color: var(--text); }
+.progress li.next { border: 2px solid var(--shu); color: var(--shu); }
+
+.feedback {
+  margin: 0;
+  min-height: 2.6em;
+  font-size: 1.02rem;
+  padding-left: 12px;
+  border-left: 3px solid var(--line-strong);
+}
+.feedback.good { border-left-color: var(--text); }
+.feedback.miss { border-left-color: var(--shu); }
+.feedback.done { border-left-color: var(--shu); font-weight: 600; }
+@media (min-width: 900px) { .feedback { min-height: 3.1em; } }
+
+/* ---------- the sheet ---------- */
+
+.sheet {
+  position: relative;
+  width: min(100%, calc((100vh - 56px) / 1.16), 700px);
+  aspect-ratio: 1 / 1.16;
+  margin: 0 auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: crosshair;
+}
+.layer { position: absolute; inset: 0; width: 100%; height: 100%; }
+.paper { filter: drop-shadow(0 14px 22px var(--shadow)) drop-shadow(0 1px 1px var(--shadow-near)); }
+.wet { transition: opacity 0.7s ease; }
+.wet.fading { opacity: 0; }
+
+.seal {
+  position: absolute;
+  left: 7%;
+  top: 84.3%;
+  width: 13%;
+  aspect-ratio: 1;
+  opacity: 0;
+  transform: rotate(-3deg);
+  mix-blend-mode: var(--seal-blend);
+  pointer-events: none;
+}
+.seal.stamped { opacity: 1; animation: stamp 0.46s cubic-bezier(0.2, 0.9, 0.25, 1.15) both; }
+@keyframes stamp {
+  0% { opacity: 0; transform: scale(1.4) rotate(-8deg); }
+  55% { opacity: 1; transform: scale(0.95) rotate(-3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-3deg); }
+}
+
+.sheet-caption {
+  position: absolute;
+  right: 7%;
+  top: 86.5%;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--caption);
+  font-size: clamp(0.68rem, 1.9vw, 0.86rem);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+.sheet-caption [lang="ja"] { font-size: 1.5em; }
+
+.pen-note { margin: 10px auto 0; max-width: 60ch; color: var(--muted); font-size: 0.85rem; text-align: center; }
+
+/* Controls fade while the brush is on the paper, and return when it lifts. */
+.fade-while-inking { transition: opacity 0.2s ease; }
+body.inking .fade-while-inking { opacity: 0; pointer-events: none; }
+
+/* ---------- controls ---------- */
+
+.controls { display: grid; gap: 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+button {
+  font: 500 0.92rem/1.2 var(--sans);
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  padding: 9px 13px;
+  min-height: 40px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--text); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.primary { background: var(--primary-bg); color: var(--primary-fg); border-color: var(--primary-bg); font-weight: 600; }
+button.primary:hover { filter: brightness(1.08); }
+
+.toggle { display: inline-flex; align-items: center; gap: 8px; }
+.toggle::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 1px;
+}
+.toggle[aria-pressed="true"]::before { background: var(--shu); border-color: var(--shu); }
+
+.share-note { color: var(--muted); font-size: 0.86rem; }
+
+/* ---------- picker ---------- */
+
+.picker h2 {
+  margin: 6px 0 8px;
+  font: 600 0.8rem/1.4 var(--sans);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.picker-sub { letter-spacing: 0.02em; text-transform: none; font-weight: 400; color: var(--muted); margin-left: 6px; }
+.search-label { display: block; font-size: 0.86rem; color: var(--muted); margin-bottom: 4px; }
+.search {
+  width: 100%;
+  font: 400 1rem var(--sans);
+  color: var(--text);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  padding: 9px 11px;
+}
+.search::placeholder { color: var(--muted); opacity: 1; }
+.search-status { margin: 6px 0; min-height: 1.4em; font-size: 0.86rem; color: var(--muted); }
+
+.group { margin: 10px 0 14px; }
+.group h3 {
+  margin: 0 0 6px;
+  font: 600 0.86rem/1.3 var(--sans);
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.group h3 [lang="ja"] { color: var(--muted); font-size: 0.9rem; }
+.chars {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 6px;
+}
+.char {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  min-height: 0;
+  font: 500 1.45rem/1 var(--serif);
+  border-color: var(--line);
+}
+.char[aria-current="true"] { border: 2px solid var(--shu); background: var(--paper); }
+.char.written::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--shu);
+  border-radius: 1px;
+}
+
+/* ---------- colophon ---------- */
+
+.colophon { font-size: 0.82rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
+.colophon p { margin: 0 0 6px; }
+
+.noscript { max-width: 40ch; margin: 40px auto; text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-while-inking, .wet { transition: none; }
+  .seal.stamped { animation: none; }
+}
