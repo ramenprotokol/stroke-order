@@ -1,0 +1,16 @@
+Everything in this data/ directory, and the stroke-data file the build makes from
+it (dist/assets/kanji-data.*.json), is licensed under the Creative Commons
+Attribution-ShareAlike 3.0 Unported licence (CC BY-SA 3.0):
+https://creativecommons.org/licenses/by-sa/3.0/
+
+It is NOT covered by the MIT licence of the app's code.
+
+- data/kanjivg/*.svg are unmodified files from KanjiVG (Kanji Vector Graphics),
+  release r20260714. KanjiVG is copyright Ulrich Apel and released under
+  CC BY-SA 3.0. Project site: https://kanjivg.tagaini.net
+  Source: https://github.com/KanjiVG/kanjivg  (licence text: data/kanjivg/COPYING)
+- data/curated.json (the choice of 80 characters, their English meanings and
+  readings) was written for stroke-order and is shared under the same licence.
+- The built stroke-data file is an adaptation of KanjiVG: stroke paths, stroke
+  types and stroke-number positions were extracted for those 80 characters and
+  combined with curated.json. It carries this attribution inside the file.
