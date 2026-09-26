@@ -27,7 +27,9 @@ class Demo(private val sheet: Sheet, private val onFinish: () -> Unit) {
 
     fun play(k: Kanji) {
         stop()
-        val strokes = k.strokes.mapIndexed { i, s -> BrushModel.finish(BrushModel.fromReference(s.points, s.type), 500 + i) }
+        val strokes = k.strokes.mapIndexed { i, s ->
+            BrushModel.finish(BrushModel.fromReference(s.points, s.type), 500 + i, ending = BrushModel.endingFor(s.type))
+        }
         visible = true
         if (prefersReducedMotion()) {
             drawStatic(k, strokes)
@@ -41,18 +43,26 @@ class Demo(private val sheet: Sheet, private val onFinish: () -> Unit) {
         val total = starts.last() + durations.last()
         running = true
         val t0 = window.performance.now()
+        // Finished strokes are painted once, with their texture, onto a layer of their own;
+        // each frame only the stroke being written is painted afresh.
+        val done = newCanvas(sheet.demo.width, sheet.demo.height)
+        var finished = 0
         fun frame(now: Double) {
             if (!running) return
             val t = now - t0
             val g = sheet.demo.ctx2d()
             sheet.clearDemo()
-            for (i in strokes.indices) {
-                if (t < starts[i]) break
-                val p = ((t - starts[i]) / durations[i]).coerceIn(0.0, 1.0)
-                // ease so the brush enters slowly and leaves quickly
-                Ink.paint(g, strokes[i], sheet.frame, sheet.theme.demo, rgbOf(sheet.theme.demo), sheet.dpr, alpha = 0.88, progress = p * p * (3 - 2 * p), texture = p >= 1.0)
-                number(g, k, i)
+            while (finished < strokes.size && t >= starts[finished] + durations[finished]) {
+                Ink.paint(done.ctx2d(), strokes[finished], sheet.frame, sheet.theme.demo, rgbOf(sheet.theme.demo), sheet.dpr, alpha = 0.88)
+                finished++
             }
+            g.drawImage(done, 0.0, 0.0)
+            if (finished < strokes.size && t >= starts[finished]) {
+                val p = ((t - starts[finished]) / durations[finished]).coerceIn(0.0, 1.0)
+                // ease so the brush enters slowly and leaves quickly
+                Ink.paint(g, strokes[finished], sheet.frame, sheet.theme.demo, rgbOf(sheet.theme.demo), sheet.dpr, alpha = 0.88, progress = p * p * (3 - 2 * p), texture = false)
+            }
+            for (i in strokes.indices) if (t >= starts[i]) number(g, k, i)
             if (t < total) {
                 raf = window.requestAnimationFrame(::frame)
             } else {

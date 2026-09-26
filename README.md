@@ -3,20 +3,28 @@
 Write a kanji with your finger or mouse. Ink appears as a brush, and the page checks
 your stroke order and direction, stroke by stroke.
 
-![stroke-order: 火 written in sumi ink on washi, stamped with a vermilion seal](docs/screenshot.png)
+![stroke-order: 森 written with the brush in sumi ink on washi, stamped with a vermilion seal](docs/screenshot.png)
 
 ## The 30-second experience
 
 1. Pick a character. The set is the 80 kanji Japanese children learn in their first
    year of school, grouped as numbers, nature, people and everyday. Search by meaning
    (`fire`), reading in romaji or kana (`hi`, `ひ`, `mizu`), or paste the character.
+   Romaji can be Hepburn or Kunrei (`tsuki` or `tuki`), long vowels marked, doubled or
+   left out (`jū`, `juu`, `ju`), and full-width or half-width input (`ｍｉｚｕ`, `ｽｲ`)
+   is folded first. Readings show okurigana in brackets: おお(きい).
 2. Write on the washi sheet. A pale model (usuzumi, "thin ink") sits under the 田
-   practice grid; both can be switched off. Each stroke is a brush: it thins when you
-   move fast, fills out with pen pressure, lands with a slanted head, and either stops
-   round or sweeps out to a dry-brush point, depending on how you lift.
+   practice grid; both can be switched off. Each stroke is a flat brush held at an
+   angle, so verticals come out broader than horizontals and the ends are cut on a
+   slant even at a steady mouse speed. The tip lands at a slant; a sweep tapers to a
+   sharp point, a stop presses down at an angle, a hook flicks short. The brush thins
+   when you move fast; pen pressure fills it out a little, never into a balloon. The ink
+   is wetter where the brush lands and drier towards the end, and only a fast stretch
+   (or a flicked sweep's tail) breaks into dry-brush streaks (kasure).
 3. After every stroke you get a specific, gentle answer, for example
    *"That's stroke 2 — stroke 1 comes first (the left sweep)."* (右 starts with the
-   sweep; 左 starts with the horizontal), or *"Right stroke, other way round —
+   sweep; 左 starts with the horizontal), *"That's stroke 5 — stroke 3 comes first
+   (the vertical down the middle)."* (田), or *"Right stroke, other way round —
    stroke 1 runs left to right."* A rejected stroke fades from the paper.
 4. **Show me** writes the character in vermilion teacher's ink, stroke by stroke and
    numbered. With reduced motion turned on, it shows every stroke at once, numbered,
@@ -44,28 +52,53 @@ plus a JVM target that runs the same tests a second time on a different platform
 - **Comparison** (`engine/StrokeMatcher.kt`): a drawn stroke is compared with each
   reference stroke, forwards and backwards, on three measures:
   - *position*: the mean distance between matching points. This is what tells apart
-    the three look-alike horizontals of 三;
+    the three look-alike horizontals of 三. For a dot or other short mark (a dab of the
+    brush), position is where the dab lands, so a dab much shorter than KanjiVG's drawn
+    dot still counts;
   - *shape*: a discrete Fréchet distance after both strokes are centred and scaled.
     Like $P, it ignores where and how big; unlike $P it respects point order, so a
     corner or a hook matters;
   - *heading*: the mean difference in direction of travel along matching stretches.
-    This rejects a V or a zigzag that happens to hover near a horizontal.
+    This rejects a V or a zigzag that happens to hover near a horizontal. A short mark
+    is held only to a rough overall heading.
+
+  Of two readings (forwards and backwards), one that passes always beats one that
+  fails, whatever their overall scores.
 - **Order and direction** (`engine/Practice.kt`): a small state machine (sealed
   classes for verdicts, stroke states and progress). It asks which reference stroke
-  the drawing matches and whether that is the next one. If the stroke matches only
-  when read backwards, it is the right stroke drawn the wrong way. Dots (㇔) are not
-  judged on direction: they are too short to read reliably from a finger.
+  the drawing matches and whether that is the next one. Look-alikes of one kind (三's
+  horizontals, 雨's dots) are told apart by position: the nearest wins. For the very
+  first stroke, when nothing is written to align to, the expected stroke keeps the
+  benefit of the doubt unless the drawing is outside where it would normally be
+  accepted and a look-alike is nearer. If the stroke matches only when read
+  backwards, it is the right stroke drawn the wrong way. Dots (㇔) are not judged on
+  direction: they are too short to read reliably from a finger.
 - **Alignment** (`engine/Alignment.kt`): after each accepted stroke, a least-squares
   scale and shift maps your writing onto the model. People rarely write exactly on
   top of the model, so later strokes are judged relative to the ones already written.
-- **Feedback** (`engine/Feedback.kt`): stroke names come from KanjiVG's stroke types
-  (㇐ horizontal, ㇒ left sweep, ㇕ across-and-down turn…), with qualifiers worked out
-  from the geometry ("the short left sweep", "the middle horizontal").
-- **Brush** (`ink/BrushModel.kt`): the width model (speed, pressure, entry press,
-  stop or sweep ending). The canvas painting (wet edge, darker core, paper grain, dry
-  brush) is in `src/jsMain`, along with the procedural washi, the seal (carved from
-  KanjiVG's own strokes for 正) and the rest of the DOM and canvas UI. There is no
-  JavaScript framework; `web/index.html` is a static shell.
+  Until your size is known (before the first stroke, or after only a tiny one such as
+  字's first tick), strokes far from what is written get proportionally more room.
+- **Feedback** (`engine/Feedback.kt`, `engine/Placement.kt`): stroke names come from
+  KanjiVG's stroke types (㇐ horizontal, ㇒ left sweep, ㇕ across-and-down turn…), placed
+  by where the stroke really is. Every stroke is cut into its straight horizontal and
+  vertical stretches, turns included, so 日's third stroke is "the horizontal across
+  the middle" (the turn's top counts as a horizontal above it) and 田's third is "the
+  vertical down the middle". Other kinds are told apart on both axes ("the upper-left
+  dot" of 雨), by length ("the short left sweep") or by order ("the second left sweep"
+  of 休), and 宀's hooked top is "the roof". Tests check every description in the
+  80-character set is different from the others in its character and never repeats a
+  word.
+- **Brush** (`ink/BrushModel.kt`): the brush model. The footprint is a flat oval tip
+  held at an angle (`Nib`), so the mark's width follows the direction of travel; its
+  size follows speed and (capped) pen pressure; it turns to a slant where the tip lands
+  and at a stop; a recognised stroke gets the ending its type calls for (sweep, stop or
+  hook), anything else ends the way the pen left the paper; and every point carries
+  how dry the brush is, from speed and from ink used up along the stroke. The canvas
+  painting (footprints stamped into one fill, wet edge, denser core, the wet-to-dry
+  gradient, paper grain, broken kasure streaks) is in `src/jsMain/.../Ink.kt`, along
+  with the procedural washi, the seal (carved from KanjiVG's own strokes for 正) and the
+  rest of the DOM and canvas UI. There is no JavaScript framework; `web/index.html` is
+  a static shell.
 
 ### Measured matching results
 
@@ -79,6 +112,7 @@ committed KanjiVG snapshot. These are its measured results, on synthetic input:
 | skipping ahead one stroke, at every step of every character | 320/320 caught as out of order |
 | each directional stroke drawn backwards | 367/367 caught |
 | the same skip and reverse checks with sloppy writing, 4 seeds | 1279/1280 and 1468/1468 |
+| a short dab (3, 5 or 8 units) on every dot and short mark (under 18 units), in place | 126/126 accepted (88/126 before dots were judged as dabs) |
 
 Set `SWEEP_SEEDS=25` to run more seeds. With 25 I measured 2000/2000 sloppy completions,
 7999/8000 skip-aheads caught and 9175/9175 reversals caught. The one miss was reported
@@ -96,15 +130,16 @@ mistake has its own feedback sentence. Kotlin/JS also drives the canvas and the 
 whole app is one language.
 
 **Bundle size (measured on the production build, webpack production mode with Kotlin/JS
-dead-code elimination):** `app.js` is 175,247 bytes, 53,269 bytes gzipped (level 9) and
-44,611 bytes with Brotli (quality 11); the compressed sizes move by a few dozen bytes
+dead-code elimination):** `app.js` is 206,059 bytes, 62,588 bytes gzipped (level 9) and
+52,221 bytes with Brotli (quality 11); the compressed sizes move by a few dozen bytes
 from build to build (see the limitations). That is the Kotlin standard library's share
 plus the app. `npm run build` prints these numbers for every file in `dist/`.
 
 ## Build and test
 
 Needs **Java 21** and **Node 22+**. On the first run, the Gradle wrapper downloads
-Gradle 9.7.1, the Kotlin 2.4.20 plugin and a Node.js runtime for the Kotlin/JS
+Gradle 9.7.1 (and checks it against Gradle's published SHA-256, pinned in
+`gradle/wrapper/gradle-wrapper.properties`), the Kotlin 2.4.20 plugin and a Node.js runtime for the Kotlin/JS
 toolchain, plus webpack through npm (pinned in `kotlin-js-store/package-lock.json`).
 After that, everything comes from Gradle's and npm's local caches. The stroke data
 never needs the network: the KanjiVG snapshot is committed.
@@ -123,7 +158,8 @@ dependencies. They write 右 with real mouse events (catching the wrong first st
 a backwards sweep, then earning the seal) and write 十 by touch at a true 400 × 860
 phone size. They also check hostile share links, Show me (animated, and static under
 reduced motion via the keyboard), search, toggles and PNG save, and fail on any
-console error. Set `CHROME_PATH` if Chrome is not in a standard place; set
+console error. `e2e/errors.test.mjs` checks that a missing data file, a corrupt one and
+a failure while starting each get their own honest message. Set `CHROME_PATH` if Chrome is not in a standard place; set
 `REQUIRE_BROWSER=1` to make a missing Chrome a failure instead of a skip.
 
 ### The data
@@ -159,7 +195,7 @@ The two web fonts are subsets committed in `web/fonts/`: Noto Serif JP (weight 5
 
 ## Cloudflare Pages (free tier)
 
-The site is entirely static: 9 files, about 374 KB. It needs no Worker and no storage.
+The site is entirely static: 9 files, about 405 KB. It needs no Worker and no storage.
 Pages serves static assets with unlimited requests on the free plan, up to 20,000
 files per site and 25 MiB per file, so this fits many times over. `dist/_headers`
 sets a strict Content-Security-Policy (no third-party anything; the one inline script
@@ -180,16 +216,23 @@ separate guarded script so the right account is always used.
   handwriting. Real writing will surface cases the sweep doesn't.
 - **Some first strokes are genuinely ambiguous.** Before anything is written there is
   nothing to align to. If you write 天's second horizontal first, but high up where
-  the first one belongs, it counts as the first. Keeping the pale model on avoids this.
-- **Dots are not judged on direction** (see above). Hooks and small flicks are judged
-  as part of their stroke's overall shape, so a vertical hook drawn without its hook
-  is usually accepted.
+  the first one belongs, it counts as the first; if a small 町 written off to the right
+  puts its first stroke where the third belongs, it still counts as the first. Keeping
+  the pale model on avoids both.
+- **Dots are not judged on direction** (see above), and a very short dab is not judged
+  on heading either. Hooks and small flicks are judged as part of their stroke's
+  overall shape, so a vertical hook drawn without its hook is usually accepted.
+- **Stroke descriptions are worked out from geometry**, not written by hand for each
+  character. They are checked for the 80 characters here, but a few read more
+  literally than a teacher would ("the second horizontal from the bottom" counts the
+  top of 力 in 男).
 - **One stroke-order tradition.** KanjiVG follows the standard Japanese school order;
   some characters have accepted alternatives (and Chinese orders differ). The app
   accepts only KanjiVG's.
-- **The brush is a model, not a simulation**: velocity- and pressure-based width, an
-  entry head, a sweep or a stop, dry-brush streaks. There is no ink flow or paper
-  absorption.
+- **The brush is a model, not a simulation**: an angled flat footprint, speed and
+  (capped) pressure, a slanted entry and stop, a tapered sweep, a wet-to-dry gradient
+  and dry-brush streaks. There is no ink flow or paper absorption, and the ending of a
+  recognised stroke follows its type rather than how you lifted.
 - Writing needs a pointer (mouse, pen or touch). Keyboard users can pick characters,
   play Show me and use every control, but cannot write.
 - On touch screens the sheet keeps every touch for the brush, so scroll the page by

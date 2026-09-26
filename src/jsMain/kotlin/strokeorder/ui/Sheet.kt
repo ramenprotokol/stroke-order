@@ -134,7 +134,7 @@ class Sheet(
         val k = kanji
         if (showModel && k != null) {
             k.strokes.forEachIndexed { i, s ->
-                val model = BrushModel.finish(BrushModel.fromReference(s.points, s.type), seed = 900 + i)
+                val model = BrushModel.finish(BrushModel.fromReference(s.points, s.type), seed = 900 + i, ending = BrushModel.endingFor(s.type))
                 Ink.paint(g, model, f, theme.ink, theme.inkRgb, dpr, alpha = theme.modelAlpha, texture = false)
             }
         }

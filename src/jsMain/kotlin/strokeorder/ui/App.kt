@@ -17,6 +17,7 @@ import strokeorder.ink.BrushModel
 import strokeorder.ink.InputPoint
 import strokeorder.model.Catalog
 import strokeorder.model.Kanji
+import strokeorder.model.Readings
 import strokeorder.model.Search
 import strokeorder.model.ShareLink
 
@@ -92,8 +93,8 @@ class App(private val catalog: Catalog) {
         sheet.setKanji(k, sealKanji)
         el("glyph").textContent = k.char
         el("meaning").textContent = k.meaning
-        el("reading-on").textContent = k.on.joinToString("・").ifEmpty { "—" }
-        el("reading-kun").textContent = k.kun.joinToString("・").ifEmpty { "—" }
+        el("reading-on").textContent = Readings.list(k.on).ifEmpty { "—" }
+        el("reading-kun").textContent = Readings.list(k.kun).ifEmpty { "—" }
         el("count").textContent = if (k.strokeCount == 1) "1 stroke" else "${k.strokeCount} strokes"
         el("caption-char").textContent = k.char
         el("caption-text").textContent = k.meaning
@@ -124,7 +125,10 @@ class App(private val catalog: Catalog) {
     private fun onStrokeEnd(input: List<InputPoint>) {
         val points = input.map { Point(it.x, it.y) }
         val verdict = practice.submit(points)
-        val brush = BrushModel.finish(input, seed = strokeSeed++)
+        // A recognised stroke ends the way that stroke should (a sweep tapers, a stop presses);
+        // anything else ends however the pen left the paper.
+        val ending = (verdict as? Verdict.Accepted)?.let { BrushModel.endingFor(kanji.strokes[it.index].type) }
+        val brush = BrushModel.finish(input, seed = strokeSeed++, ending = ending)
         if (verdict is Verdict.Accepted) {
             sheet.commit(brush)
             if (verdict.complete) complete()
