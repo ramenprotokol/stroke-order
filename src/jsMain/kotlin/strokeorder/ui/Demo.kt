@@ -78,11 +78,13 @@ class Demo(private val sheet: Sheet, private val onFinish: () -> Unit) {
         running = false
     }
 
-    /** Stops and wipes the demo layer. */
+    /** Stops and wipes the demo layer. Cutting a running demo short counts as finishing it. */
     fun clear() {
+        val wasRunning = running
         stop()
         visible = false
         sheet.clearDemo()
+        if (wasRunning) onFinish()
     }
 
     private fun drawStatic(k: Kanji, strokes: List<BrushStroke>) {

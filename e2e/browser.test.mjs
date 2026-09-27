@@ -133,6 +133,20 @@ test('Show me: animated normally; with reduced motion, static numbered strokes a
   await moving.waitFor(`document.getElementById('btn-show').textContent === 'Show me'`, 10000);
   const done = await moving.evaluate(inkOn);
   assert.ok(done > early, `the demo grows as it plays (${early} → ${done})`);
+
+  // Cutting the demo short (writing a stroke, or moving to another character) puts the
+  // button back to "Show me" rather than leaving a "Stop" with nothing playing.
+  const label = () => moving.evaluate(`document.getElementById('btn-show').textContent`);
+  await moving.evaluate(`document.getElementById('btn-show').click()`);
+  assert.equal(await label(), 'Stop');
+  await moving.drag((await moving.evaluate(referenceStrokes('火')))[0]);
+  await moving.waitFor(`document.getElementById('sheet').dataset.progress === '1/4'`);
+  assert.equal(await label(), 'Show me', 'writing a stroke stops the demo');
+  assert.equal(await moving.evaluate(inkOn), 0, 'and wipes it');
+  await moving.evaluate(`document.getElementById('btn-show').click()`);
+  assert.equal(await label(), 'Stop');
+  await moving.evaluate(`document.getElementById('btn-next').click()`);
+  assert.equal(await label(), 'Show me', 'Next stops the demo');
   noProblems(moving);
   await moving.close();
 });
