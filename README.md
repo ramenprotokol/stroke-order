@@ -3,6 +3,8 @@
 Write a kanji with your finger or mouse. Ink appears as a brush, and the page checks
 your stroke order and direction, stroke by stroke.
 
+**Live:** https://stroke-order-7cn.pages.dev
+
 ![stroke-order: 森 written with the brush in sumi ink on washi, stamped with a vermilion seal](docs/screenshot.png)
 
 ## The 30-second experience
